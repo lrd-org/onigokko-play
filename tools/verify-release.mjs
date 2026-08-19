@@ -402,10 +402,16 @@ function tagEnd(html, start) {
 
 function rawTextEnd(html, lower, start, name) {
   const marker = `</${name}`;
-  const closeStart = lower.indexOf(marker, start);
-  if (closeStart < 0) return html.length;
-  const closeEnd = tagEnd(html, closeStart + marker.length);
-  return closeEnd < 0 ? html.length : closeEnd;
+  let closeStart = lower.indexOf(marker, start);
+  while (closeStart >= 0) {
+    const delimiter = lower[closeStart + marker.length];
+    if (delimiter === undefined || /[\t\n\f\r />]/.test(delimiter)) {
+      const closeEnd = tagEnd(html, closeStart + marker.length);
+      return closeEnd < 0 ? html.length : closeEnd;
+    }
+    closeStart = lower.indexOf(marker, closeStart + marker.length);
+  }
+  return html.length;
 }
 
 function isSelfClosing(html, opening, end) {

@@ -317,6 +317,19 @@ test('requires the exact Onigokko HTML title', () => {
       `HTML treated <${tag}/> as self-closing`,
     );
   }
+  for (const [tag, nearMatch] of [
+    ['script', 'scriptx'],
+    ['iframe', 'iframex'],
+    ['textarea', 'textareax'],
+  ]) {
+    assert.throws(
+      () => internals.verifyHtmlTitle(Buffer.from(
+        `<${tag}></${nearMatch}><title>Onigokko</title>`,
+      )),
+      /exactly one/,
+      `</${nearMatch}> was mistaken for </${tag}>`,
+    );
+  }
   for (const html of [
     '<plaintext><title>Onigokko</title>',
     '<plaintext></plaintext><title>Onigokko</title>',
