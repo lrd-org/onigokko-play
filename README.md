@@ -1,5 +1,7 @@
 # Onigokko
 
+**Play it:** https://lrd-game.itch.io/onigokko
+
 鬼ごっこ — ことばのいらない、ひとりで遊ぶブラウザゲーム。
 
 A wordless, solo browser game. You drive a small round creature across an open
@@ -41,7 +43,8 @@ then open <http://localhost:8000/>.
 ## Release
 
 The release zip is what is published on itch.io: the same files, with
-`index.html` at the root of the archive.
+`index.html` at the root of the archive. Published 2026-08-19 as v0.1 at
+https://lrd-game.itch.io/onigokko.
 
 ## Licence
 
