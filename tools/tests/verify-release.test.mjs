@@ -13,12 +13,14 @@ function zip(entries) {
   const localParts = [];
   const centralParts = [];
   let localOffset = 0;
-  for (const [name, source] of entries) {
+  for (const [name, source, metadata = {}] of entries) {
     const nameBuffer = Buffer.from(name);
     const data = Buffer.from(source);
     const compressed = name.endsWith('/') ? Buffer.alloc(0) : deflateRawSync(data);
     const method = name.endsWith('/') ? 0 : 8;
     const checksum = internals.crc32(data);
+    const creatorSystem = metadata.creatorSystem ?? 3;
+    const mode = metadata.mode ?? (name.endsWith('/') ? 0o040755 : 0o100644);
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);
     local.writeUInt16LE(20, 4);
@@ -31,13 +33,14 @@ function zip(entries) {
 
     const central = Buffer.alloc(46);
     central.writeUInt32LE(0x02014b50, 0);
-    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE((creatorSystem << 8) | 20, 4);
     central.writeUInt16LE(20, 6);
     central.writeUInt16LE(method, 10);
     central.writeUInt32LE(checksum, 16);
     central.writeUInt32LE(compressed.length, 20);
     central.writeUInt32LE(data.length, 24);
     central.writeUInt16LE(nameBuffer.length, 28);
+    central.writeUInt32LE((mode << 16) >>> 0, 38);
     central.writeUInt32LE(localOffset, 42);
     centralParts.push(central, nameBuffer);
     localOffset += local.length + nameBuffer.length + compressed.length;
@@ -67,7 +70,7 @@ const releaseEntries = [
 ];
 const releaseTree = releaseEntries
   .filter(([name]) => !name.endsWith('/'))
-  .map(([path]) => ({ path, type: 'blob' }));
+  .map(([path]) => ({ path, type: 'blob', mode: '100644' }));
 
 async function fakeRelease(options = {}) {
   const entries = options.entries ?? releaseEntries;
@@ -218,6 +221,25 @@ test('rejects unsafe and duplicate zip entries', () => {
   assert.throws(() => internals.parseZip(zip([['index.html', 'one'], ['index.html', 'two']])), /duplicate zip entry/);
 });
 
+test('rejects symlink, FIFO, and mode/name mismatches in ZIP entries', () => {
+  assert.throws(
+    () => internals.parseZip(zip([['main.js', 'index.html', { mode: 0o120777 }]])),
+    /special zip entry/,
+  );
+  assert.throws(
+    () => internals.parseZip(zip([['main.js', 'pipe', { mode: 0o010644 }]])),
+    /special zip entry/,
+  );
+  assert.throws(
+    () => internals.parseZip(zip([['view/', '', { mode: 0o100644 }]])),
+    /mode and name disagree/,
+  );
+  assert.throws(
+    () => internals.parseZip(zip([['main.js', 'export {};', { mode: 0o040755 }]])),
+    /mode and name disagree/,
+  );
+});
+
 test('matches archive files exactly to the tagged release tree', () => {
   const archive = internals.parseZip(zip([
     ['index.html', '<title>Onigokko</title>'],
@@ -254,21 +276,32 @@ test('requires the exact Onigokko HTML title', () => {
     () => internals.verifyHtmlTitle(Buffer.from('<title>Onigokko</title><title>Onigokko</title>')),
     /exactly one/,
   );
+  assert.throws(
+    () => internals.verifyHtmlTitle(Buffer.from('<!-- <title>Onigokko</title> --><main>No title</main>')),
+    /exactly one/,
+  );
+  assert.throws(
+    () => internals.verifyHtmlTitle(Buffer.from('<script>const decoy = "<title>Onigokko</title>";</script>')),
+    /exactly one/,
+  );
+  assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
+    '<script>const decoy = "<title>Wrong</title>";</script><TITLE> Onigokko </TITLE>',
+  )));
 });
 
 test('filters the tagged tree to the release allowlist', () => {
   const files = internals.releaseFilesFromTree({
     truncated: false,
     tree: [
-      { type: 'blob', path: 'index.html' },
-      { type: 'blob', path: 'main.js' },
-      { type: 'blob', path: 'README.md' },
-      { type: 'blob', path: 'THIRD_PARTY_NOTICES.txt' },
-      { type: 'blob', path: 'sim/game.js' },
-      { type: 'blob', path: 'view/input.js' },
-      { type: 'blob', path: 'vendor/three.module.js' },
-      { type: 'blob', path: 'tools/verify-release.mjs' },
-      { type: 'blob', path: 'PROVENANCE.md' },
+      { type: 'blob', mode: '100644', path: 'index.html' },
+      { type: 'blob', mode: '100644', path: 'main.js' },
+      { type: 'blob', mode: '100644', path: 'README.md' },
+      { type: 'blob', mode: '100644', path: 'THIRD_PARTY_NOTICES.txt' },
+      { type: 'blob', mode: '100644', path: 'sim/game.js' },
+      { type: 'blob', mode: '100644', path: 'view/input.js' },
+      { type: 'blob', mode: '100644', path: 'vendor/three.module.js' },
+      { type: 'blob', mode: '100755', path: 'tools/verify-release.mjs' },
+      { type: 'blob', mode: '100644', path: 'PROVENANCE.md' },
     ],
   });
   assert.deepEqual(files, [
@@ -284,6 +317,15 @@ test('filters the tagged tree to the release allowlist', () => {
     () => internals.releaseFilesFromTree({ truncated: false, tree: [] }),
     /tagged release tree is missing/,
   );
+  assert.throws(
+    () => internals.releaseFilesFromTree({
+      truncated: false,
+      tree: releaseTree.map((entry) => (
+        entry.path === 'main.js' ? { ...entry, mode: '120000' } : entry
+      )),
+    }),
+    /non-regular mode 120000 at main\.js/,
+  );
 });
 
 test('verifies a complete Release through the GitHub API contract', async () => {
@@ -291,6 +333,15 @@ test('verifies a complete Release through the GitHub API contract', async () => 
     const result = await verifyFixture(fixture);
     assert.equal(result.tag, 'v-test');
     assert.equal(result.files.length, 7);
+  });
+});
+
+test('rejects a special-mode expected file through the full Release contract', async () => {
+  const entries = releaseEntries.map(([path, contents]) => (
+    path === 'main.js' ? [path, contents, { mode: 0o120777 }] : [path, contents]
+  ));
+  await withFakeRelease({ entries }, async (fixture) => {
+    await assert.rejects(verifyFixture(fixture), /special zip entry is not allowed: main\.js/);
   });
 });
 

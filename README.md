@@ -55,7 +55,7 @@ cards fit phone-landscape screens without changing gameplay.
 From a clean clone, use Node.js 20 or later with network access to GitHub:
 
 ```sh
-node tools/verify-release.mjs v0.1
+node tools/verify-release.mjs v0.1.1
 ```
 
 The verifier downloads the tag's zip and `.sha256` assets from the GitHub
@@ -63,8 +63,10 @@ Release. It checks the Release tag and title, GitHub's asset digest and size,
 the checksum asset, the matching `PROVENANCE.md` record, and the archive's exact
 file manifest against the tagged repository tree. It also requires
 `index.html` and `THIRD_PARTY_NOTICES.txt` at the archive root and the exact
-HTML title `Onigokko`. Set `GITHUB_TOKEN` only when API rate limits or a private
-repository require authentication; the game itself performs no network calls.
+HTML title element `Onigokko`, regular-file/directory modes in the ZIP, regular
+Git blob modes, and valid CRC-32 for every file. Set `GITHUB_TOKEN` only when
+API rate limits or a private repository require authentication; the game itself
+performs no network calls.
 
 Run the dependency-free tool tests with:
 

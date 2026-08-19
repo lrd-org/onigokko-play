@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -70,4 +70,24 @@ test('does not serve paths outside the game directory', async (context) => {
   context.after(() => harness.close());
   const response = await fetch(`${harness.gameOrigin}/..%2F..%2Fetc%2Fpasswd`);
   assert.equal(response.status, 403);
+});
+
+test('does not follow a game-directory symlink outside the real root', async (context) => {
+  const gameDir = await mkdtemp(join(tmpdir(), 'onigokko-harness-game-'));
+  const outsideDir = await mkdtemp(join(tmpdir(), 'onigokko-harness-outside-'));
+  await writeFile(join(gameDir, 'index.html'), '<title>Onigokko</title>');
+  await writeFile(join(outsideDir, 'secret.txt'), 'REVIEW-SECRET');
+  await symlink(outsideDir, join(gameDir, 'escape'));
+  const harness = await startHarness({
+    host: '127.0.0.1',
+    gamePort: 0,
+    parentPort: 0,
+    gameDir,
+    width: 960,
+    height: 600,
+  });
+  context.after(() => harness.close());
+  const response = await fetch(`${harness.gameOrigin}/escape/secret.txt`);
+  assert.equal(response.status, 403);
+  assert.notEqual(await response.text(), 'REVIEW-SECRET');
 });

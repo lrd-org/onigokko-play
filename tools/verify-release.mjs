@@ -15,6 +15,13 @@ const RELEASE_ROOT_FILES = new Set([
   'THIRD_PARTY_NOTICES.txt',
 ]);
 const RELEASE_DIRECTORIES = ['sim/', 'view/', 'vendor/'];
+const UNIX_CREATORS = new Set([3, 19]);
+const UNIX_FILE_TYPE = 0o170000;
+const UNIX_REGULAR = 0o100000;
+const UNIX_DIRECTORY = 0o040000;
+const RAW_TEXT_ELEMENTS = new Set([
+  'iframe', 'noembed', 'noframes', 'noscript', 'script', 'style', 'template', 'textarea', 'xmp',
+]);
 const CRC32_TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -193,6 +200,17 @@ function safeZipName(name) {
   return parts.length > 0 && parts.every((part) => part !== '.' && part !== '..');
 }
 
+function zipEntryKind({ creatorSystem, externalAttributes, name }) {
+  if (UNIX_CREATORS.has(creatorSystem)) {
+    const mode = externalAttributes >>> 16;
+    const type = mode & UNIX_FILE_TYPE;
+    if (type === UNIX_REGULAR) return 'file';
+    if (type === UNIX_DIRECTORY) return 'directory';
+    return 'special';
+  }
+  return (externalAttributes & 0x10) !== 0 || name.endsWith('/') ? 'directory' : 'file';
+}
+
 function parseZip(buffer) {
   const end = findEndOfCentralDirectory(buffer);
   const disk = buffer.readUInt16LE(end + 4);
@@ -216,6 +234,8 @@ function parseZip(buffer) {
     if (offset + 46 > buffer.length || buffer.readUInt32LE(offset) !== 0x02014b50) {
       fail(`invalid zip central-directory entry ${index + 1}`);
     }
+    const versionMadeBy = buffer.readUInt16LE(offset + 4);
+    const creatorSystem = versionMadeBy >>> 8;
     const flags = buffer.readUInt16LE(offset + 8);
     const method = buffer.readUInt16LE(offset + 10);
     const checksum = buffer.readUInt32LE(offset + 16);
@@ -225,6 +245,7 @@ function parseZip(buffer) {
     const extraLength = buffer.readUInt16LE(offset + 30);
     const commentLength = buffer.readUInt16LE(offset + 32);
     const localOffset = buffer.readUInt32LE(offset + 42);
+    const externalAttributes = buffer.readUInt32LE(offset + 38);
     const endOffset = offset + 46 + nameLength + extraLength + commentLength;
     if (endOffset > buffer.length) fail(`zip central-directory entry ${index + 1} is truncated`);
     const name = buffer.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
@@ -232,8 +253,24 @@ function parseZip(buffer) {
     if (names.has(name)) fail(`duplicate zip entry: ${name}`);
     if ((flags & 0x1) !== 0) fail(`encrypted zip entry is not supported: ${name}`);
     if (method !== 0 && method !== 8) fail(`unsupported compression method ${method}: ${name}`);
+    const kind = zipEntryKind({ creatorSystem, externalAttributes, name });
+    if (kind === 'special') fail(`special zip entry is not allowed: ${name}`);
+    if ((kind === 'directory') !== name.endsWith('/')) {
+      fail(`zip entry mode and name disagree: ${name}`);
+    }
     names.add(name);
-    entries.push({ name, flags, method, checksum, compressedSize, uncompressedSize, localOffset });
+    entries.push({
+      name,
+      kind,
+      creatorSystem,
+      externalAttributes,
+      flags,
+      method,
+      checksum,
+      compressedSize,
+      uncompressedSize,
+      localOffset,
+    });
     offset = endOffset;
   }
   if (offset !== centralOffset + centralSize) fail('zip central-directory size does not match its entries');
@@ -273,8 +310,13 @@ function parseZip(buffer) {
 
 function releaseFilesFromTree(tree) {
   if (tree.truncated) fail('GitHub tag tree is truncated');
-  const files = tree.tree
-    .filter((entry) => entry.type === 'blob')
+  const blobs = tree.tree.filter((entry) => entry.type === 'blob');
+  for (const entry of blobs) {
+    if (entry.mode !== '100644' && entry.mode !== '100755') {
+      fail(`tagged release tree has non-regular mode ${entry.mode} at ${entry.path}`);
+    }
+  }
+  const files = blobs
     .map((entry) => entry.path)
     .filter((path) => RELEASE_ROOT_FILES.has(path)
       || RELEASE_DIRECTORIES.some((directory) => path.startsWith(directory)))
@@ -314,8 +356,8 @@ function expectedDirectories(files) {
 }
 
 function compareArchive(zip, expectedFiles) {
-  const archiveFiles = zip.entries.filter((entry) => !entry.name.endsWith('/')).map((entry) => entry.name).sort();
-  const archiveDirectories = zip.entries.filter((entry) => entry.name.endsWith('/')).map((entry) => entry.name).sort();
+  const archiveFiles = zip.entries.filter((entry) => entry.kind === 'file').map((entry) => entry.name).sort();
+  const archiveDirectories = zip.entries.filter((entry) => entry.kind === 'directory').map((entry) => entry.name).sort();
   const expectedFileSet = new Set(expectedFiles);
   const expectedDirectorySet = expectedDirectories(expectedFiles);
   const foldedNames = new Map();
@@ -340,10 +382,74 @@ function compareArchive(zip, expectedFiles) {
   return { files: archiveFiles, directories: archiveDirectories };
 }
 
+function tagEnd(html, start) {
+  let quote = '';
+  for (let index = start; index < html.length; index += 1) {
+    const character = html[index];
+    if (quote) {
+      if (character === quote) quote = '';
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === '>') {
+      return index + 1;
+    }
+  }
+  return -1;
+}
+
+function htmlTitleElements(html) {
+  const lower = html.toLowerCase();
+  const titles = [];
+  let cursor = 0;
+  while (cursor < html.length) {
+    const opening = html.indexOf('<', cursor);
+    if (opening < 0) break;
+    if (html.startsWith('<!--', opening)) {
+      const end = html.indexOf('-->', opening + 4);
+      cursor = end < 0 ? html.length : end + 3;
+      continue;
+    }
+    if (html.startsWith('<!', opening) || html.startsWith('<?', opening) || html.startsWith('</', opening)) {
+      const end = tagEnd(html, opening + 2);
+      cursor = end < 0 ? html.length : end;
+      continue;
+    }
+    const match = /^<([A-Za-z][A-Za-z0-9:-]*)\b/.exec(html.slice(opening));
+    if (!match) {
+      cursor = opening + 1;
+      continue;
+    }
+    const name = match[1].toLowerCase();
+    const startEnd = tagEnd(html, opening + match[0].length);
+    if (startEnd < 0) break;
+    if (name === 'title') {
+      const closePattern = /<\/title\s*>/gi;
+      closePattern.lastIndex = startEnd;
+      const close = closePattern.exec(html);
+      if (!close) break;
+      titles.push(html.slice(startEnd, close.index).trim());
+      cursor = closePattern.lastIndex;
+      continue;
+    }
+    if (RAW_TEXT_ELEMENTS.has(name)) {
+      const marker = `</${name}`;
+      const closeStart = lower.indexOf(marker, startEnd);
+      if (closeStart < 0) {
+        cursor = html.length;
+        continue;
+      }
+      const closeEnd = tagEnd(html, closeStart + marker.length);
+      cursor = closeEnd < 0 ? html.length : closeEnd;
+      continue;
+    }
+    cursor = startEnd;
+  }
+  return titles;
+}
+
 function verifyHtmlTitle(contents) {
-  const html = contents.toString('utf8');
-  const titles = [...html.matchAll(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/gi)];
-  if (titles.length !== 1 || titles[0][1].trim() !== 'Onigokko') {
+  const titles = htmlTitleElements(contents.toString('utf8'));
+  if (titles.length !== 1 || titles[0] !== 'Onigokko') {
     fail('index.html must contain exactly one <title>Onigokko</title>');
   }
 }
@@ -412,6 +518,8 @@ export async function verifyRelease({ repo, tag, provenance, apiBase = API_BASE 
       'GitHub asset digest and size',
       'PROVENANCE.md sha256, size, and file count',
       'tagged release-tree manifest',
+      'regular ZIP and Git tree entry modes',
+      'CRC-32 for every archive file',
       'index.html at archive root',
       'THIRD_PARTY_NOTICES.txt heading',
       'HTML title Onigokko',
@@ -455,6 +563,7 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
 export const internals = {
   compareArchive,
   crc32,
+  htmlTitleElements,
   parseArgs,
   parseChecksumFile,
   parseProvenance,
@@ -462,4 +571,5 @@ export const internals = {
   releaseFilesFromTree,
   verifyAssetMetadata,
   verifyHtmlTitle,
+  zipEntryKind,
 };

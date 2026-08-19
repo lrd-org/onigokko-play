@@ -67,7 +67,8 @@ node --test tools/tests/*.test.mjs
 git diff --check
 ```
 
-Result: 23 tests passed, 0 failed; all syntax and diff checks passed. Tests cover
+Result after independent-review fixes: 26 tests passed, 0 failed; all syntax
+and diff checks passed. Tests cover
 strict provenance/checksum parsing, stored/deflated ZIP entries, traversal and
 duplicate rejection, exact tag-tree manifests, title enforcement, separate
 origins, click/fullscreen markup, and the static server traversal guard.
@@ -93,6 +94,12 @@ GitHub API/asset fixture:
 | wrong or absent HTML title | rejected |
 | non-loopback harness bind host | rejected before listen |
 | `?game=https://example.com/...` on parent | ignored; iframe remains loopback |
+| Unix symlink or FIFO at an expected ZIP path | rejected as a special entry |
+| Git tag-tree symlink/non-regular blob mode | rejected before manifest acceptance |
+| file/directory mode disagrees with trailing slash | rejected while parsing ZIP |
+| title bytes only inside an HTML comment | rejected: no title element |
+| title bytes only inside a script string | rejected: no title element |
+| in-root symlink targets a file outside game root | HTTP 403; bytes not served |
 
 Two CONFIRMED gaps were fixed during this pass: the first implementation read
 only the two required archive files rather than CRC-checking all files, and the
@@ -116,6 +123,30 @@ directory. The clone had no working-tree changes. From that clone:
 
 The final follow-up commit changes this evidence file only, so `c36b7e6`
 identifies the exact implementation tree exercised by the clean-clone probe.
+
+## Independent review disposition
+
+The independent review is preserved verbatim at
+`docs/window-2026-08-20/F-independent-review-a2.md` (original review commit
+`13ffbae`). Its three blocking findings were reproduced and fixed:
+
+| Finding | Disposition |
+| --- | --- |
+| F-R1 special ZIP entries / Git symlink mode | FIXED: creator system and external mode parsed; only regular files/directories accepted; Git release blobs restricted to `100644`/`100755`; unit and full Release fixtures reject symlink/FIFO |
+| F-R2 comment/script title decoys | FIXED: token scan skips comments and raw-text containers before accepting exactly one real title element; both reviewer decoys reject |
+| F-R3 symlink escape from embed root | FIXED: root and final targets are checked by `realpath`; outside symlink fixture returns 403 without the secret bytes |
+
+Final live Release probe after rebasing onto `onigokko-play` main `59c949f`:
+
+```sh
+node tools/verify-release.mjs v0.1.1 --json
+```
+
+PASS: `Onigokko v0.1.1`, 553538 bytes, 30 files, three expected directory
+entries, SHA-256
+`8f36eb8b492f6430acd2ccfc340806309e855ded782f6d5ef7d156e93a02bad1`.
+The matching sidecar, GitHub asset metadata, v0.1.1 provenance, tag-tree paths
+and modes, every file CRC, notices, and real HTML title element all passed.
 
 ## Deliberately not done
 

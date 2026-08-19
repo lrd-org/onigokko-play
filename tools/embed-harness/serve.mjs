@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, realpath, stat } from 'node:fs/promises';
 import { extname, isAbsolute, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -119,6 +119,7 @@ function inside(root, candidate) {
 
 function createGameHandler(root) {
   const absoluteRoot = resolve(root);
+  const realRoot = realpath(absoluteRoot);
   return async (request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       send(response, 405, 'Method Not Allowed\n', 'text/plain; charset=utf-8');
@@ -133,15 +134,25 @@ function createGameHandler(root) {
       send(response, 200, request.method === 'HEAD' ? '' : 'ok\n', 'text/plain; charset=utf-8');
       return;
     }
+    const rootTarget = await realRoot;
     let candidate = resolve(absoluteRoot, `.${pathname}`);
     if (!inside(absoluteRoot, candidate)) {
       send(response, 403, 'Forbidden\n', 'text/plain; charset=utf-8');
       return;
     }
     try {
+      candidate = await realpath(candidate);
+      if (!inside(rootTarget, candidate)) {
+        send(response, 403, 'Forbidden\n', 'text/plain; charset=utf-8');
+        return;
+      }
       const details = await stat(candidate);
       if (details.isDirectory()) candidate = resolve(candidate, 'index.html');
-      if (!inside(absoluteRoot, candidate) || !(await stat(candidate)).isFile()) throw new Error('not a file');
+      candidate = await realpath(candidate);
+      if (!inside(rootTarget, candidate) || !(await stat(candidate)).isFile()) {
+        send(response, 403, 'Forbidden\n', 'text/plain; charset=utf-8');
+        return;
+      }
       const contents = await readFile(candidate);
       const body = request.method === 'HEAD' ? Buffer.alloc(0) : contents;
       send(response, 200, body, TYPES.get(extname(candidate).toLowerCase()) ?? 'application/octet-stream');
