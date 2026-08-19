@@ -1,0 +1,99 @@
+THIRD-PARTY NOTICES — Onigokko
+==============================
+
+This release contains third-party software. Everything listed below is
+third-party material and is used under the licence reproduced with it.
+
+All other material in this repository — index.html, main.js, sim/, view/, and
+every asset inlined in them — is first-party Onigokko material. All rights
+reserved. No licence is granted.
+
+
+1. three.js — version r185
+--------------------------
+Files:    vendor/three.module.js
+          vendor/three.core.js
+Upstream: https://github.com/mrdoob/three.js (tag r185)
+Licence:  MIT
+Notice in the files: "Copyright 2010-2026 Three.js Authors —
+SPDX-License-Identifier: MIT"
+
+Full licence text, as published at
+https://raw.githubusercontent.com/mrdoob/three.js/r185/LICENSE :
+
+    The MIT License
+    
+    Copyright © 2010-2026 three.js authors
+    
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+
+2. earcut — version 3.0.2 (embedded inside three.core.js)
+---------------------------------------------------------
+Location: vendor/three.core.js, from the line marked
+          "// copy of mapbox/earcut version 3.0.2"
+Upstream: https://github.com/mapbox/earcut (tag v3.0.2)
+Licence:  ISC (Copyright (c) 2024, Mapbox)
+
+three.js vendors this polygon-triangulation routine into its own source and
+distributes it under the three.js MIT licence above. The upstream project is
+ISC-licensed; the ISC terms are equivalent in substance to the MIT terms. It is
+listed separately here so the attribution is not lost inside the bundle.
+
+Full upstream licence text, as published at
+https://raw.githubusercontent.com/mapbox/earcut/v3.0.2/LICENSE :
+
+    ISC License
+    
+    Copyright (c) 2024, Mapbox
+    
+    Permission to use, copy, modify, and/or distribute this software for any purpose
+    with or without fee is hereby granted, provided that the above copyright notice
+    and this permission notice appear in all copies.
+    
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+    FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+    OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+    TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+    THIS SOFTWARE.
+
+
+Nothing else third-party
+------------------------
+The playable tree was searched for further third-party material and none was
+found:
+
+  * Fonts     — no font files are shipped. The only font declaration is a
+                system stack: ui-rounded, "SF Pro Rounded", system-ui,
+                sans-serif. Nothing is downloaded.
+  * Images    — no image files are shipped. Every mark in the game is an SVG
+                path written inline in index.html or main.js, or is drawn on a
+                canvas at run time. The tab icon is an inline data: URI.
+  * Audio     — no audio files are shipped. All sound is synthesised in the
+                browser with the Web Audio API.
+  * Libraries — three.js is the only dependency. No build step, no bundler
+                runtime, no polyfills, no analytics, and no fonts or scripts
+                from any other origin.
+
+One further attribution appears as a comment inside three.core.js, crediting an
+algorithm to a book published by Morgan Kaufmann Publishers ((c) 2005 Elsevier
+Inc.). It is an attribution for the method, not separately licensed code, and
+it travels under the three.js MIT licence above.
