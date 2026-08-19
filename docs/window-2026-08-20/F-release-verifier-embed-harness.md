@@ -99,6 +99,7 @@ GitHub API/asset fixture:
 | file/directory mode disagrees with trailing slash | rejected while parsing ZIP |
 | title bytes only inside an HTML comment | rejected: no title element |
 | title bytes only inside a script string | rejected: no title element |
+| title element only inside SVG or MathML | rejected: foreign element is not the HTML document title |
 | in-root symlink targets a file outside game root | HTTP 403; bytes not served |
 
 Two CONFIRMED gaps were fixed during this pass: the first implementation read
@@ -133,7 +134,7 @@ The independent review is preserved verbatim at
 | Finding | Disposition |
 | --- | --- |
 | F-R1 special ZIP entries / Git symlink mode | FIXED: creator system and external mode parsed; only regular files/directories accepted; Git release blobs restricted to `100644`/`100755`; unit and full Release fixtures reject symlink/FIFO |
-| F-R2 comment/script title decoys | FIXED: token scan skips comments and raw-text containers before accepting exactly one real title element; both reviewer decoys reject |
+| F-R2 HTML-title decoys, including final SVG residual | FIXED: token scan skips comments, raw-text containers, SVG and MathML before accepting exactly one HTML title element; comment/script/attribute/foreign-only decoys reject, while a foreign decoy beside the real HTML title passes |
 | F-R3 symlink escape from embed root | FIXED: root and final targets are checked by `realpath`; outside symlink fixture returns 403 without the secret bytes |
 
 Final live Release probe after rebasing onto `onigokko-play` main `59c949f`:

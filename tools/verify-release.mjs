@@ -20,7 +20,7 @@ const UNIX_FILE_TYPE = 0o170000;
 const UNIX_REGULAR = 0o100000;
 const UNIX_DIRECTORY = 0o040000;
 const RAW_TEXT_ELEMENTS = new Set([
-  'iframe', 'noembed', 'noframes', 'noscript', 'script', 'style', 'template', 'textarea', 'xmp',
+  'iframe', 'math', 'noembed', 'noframes', 'noscript', 'script', 'style', 'svg', 'template', 'textarea', 'xmp',
 ]);
 const CRC32_TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;

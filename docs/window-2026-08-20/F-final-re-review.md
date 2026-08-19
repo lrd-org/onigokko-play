@@ -9,6 +9,17 @@ v0.1.1 Release passes from a clean clone and the existing 26 tests pass. One
 HTML-title decoy remains accepted: an SVG `<title>` is not the document's HTML
 title, but the verifier counts it as one.
 
+## Implementer disposition
+
+**FIXED after this re-review.** The token scan now treats SVG and MathML as
+foreign subtrees, just as it already treats scripts/comments as non-title
+content. An SVG-only or MathML-only `<title>Onigokko</title>` rejects; an SVG
+decoy beside one real HTML title passes; the original comment, script, and
+attribute decoys still reject. The published v0.1.1 HTML continues to pass.
+
+Regression command and final clean-clone/live evidence are recorded in
+`F-release-verifier-embed-harness.md` at the final branch head.
+
 ## F-R1: special ZIP and Git modes
 
 **CONFIRMED FIXED.** `parseZip()` reads creator system and external attributes,

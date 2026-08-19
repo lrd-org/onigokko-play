@@ -284,8 +284,23 @@ test('requires the exact Onigokko HTML title', () => {
     () => internals.verifyHtmlTitle(Buffer.from('<script>const decoy = "<title>Onigokko</title>";</script>')),
     /exactly one/,
   );
+  assert.throws(
+    () => internals.verifyHtmlTitle(Buffer.from('<svg><title>Onigokko</title></svg>')),
+    /exactly one/,
+  );
+  assert.throws(
+    () => internals.verifyHtmlTitle(Buffer.from('<math><title>Onigokko</title></math>')),
+    /exactly one/,
+  );
+  assert.throws(
+    () => internals.verifyHtmlTitle(Buffer.from('<main data-decoy="<title>Onigokko</title>"></main>')),
+    /exactly one/,
+  );
   assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
     '<script>const decoy = "<title>Wrong</title>";</script><TITLE> Onigokko </TITLE>',
+  )));
+  assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
+    '<svg><title>Wrong namespace</title></svg><head><title>Onigokko</title></head>',
   )));
 });
 
