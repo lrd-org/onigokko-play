@@ -54,6 +54,7 @@ Observed:
 | Fullscreen | parent `#stage` became `document.fullscreenElement` |
 | Console | 0 errors |
 | Network | 29 requests, confined to the two loopback origins |
+| Remote override | `?game=https://example.com/...` ignored; local game loaded |
 
 ## Automated checks
 
@@ -99,20 +100,22 @@ first parent fixture allowed its game URL to be overridden by a query string.
 
 ## Clean-clone proof
 
-Commit `6e4fa12` was cloned with `git clone --no-local` to a new temporary
+Code commit `c36b7e6440a6949f1afa75faf5e1871756ea9b32` was cloned with
+`git clone --no-local` to a new temporary
 directory. The clone had no working-tree changes. From that clone:
 
 - all four `node --check` probes passed;
-- `node --test tools/tests/*.test.mjs` passed 9/9;
+- `node --test tools/tests/*.test.mjs` passed 23/23;
 - `node tools/verify-release.mjs v0.1 --json` passed with the values above;
-- the harness CLI served ports 43193/43194 and a fresh Playwright Chromium
-  session reproduced the 960 x 600 frame, click activation, `__ofa2` runtime
-  advancement (`t` 0 to 1.48), fullscreen, zero console errors, and 29 requests
-  confined to the two loopback origins.
+- the harness CLI served ports 43203/43204 and a fresh Playwright Chromium
+  session opened the parent with `?game=https://example.com/remote-build`;
+  the iframe still loaded `http://127.0.0.1:43203/`, reproduced the 960 x 600
+  frame, click activation/focus, `__ofa2` runtime advancement (`t` 1.48),
+  fullscreen, zero console errors, and 29 requests confined to the two
+  loopback origins.
 
-The evidence commit was amended after this probe, so `6e4fa12` identifies the
-tree that was cloned rather than the final commit object. The only amended
-content is this clean-clone evidence section.
+The final follow-up commit changes this evidence file only, so `c36b7e6`
+identifies the exact implementation tree exercised by the clean-clone probe.
 
 ## Deliberately not done
 
