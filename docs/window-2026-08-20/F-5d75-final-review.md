@@ -76,3 +76,12 @@ Live `node tools/verify-release.mjs v0.1.1 --json` passes:
 no play or settings data" and its four-record retention/deletion detail.
 
 Everything except the self-closing HTML title boundary is approved.
+
+## Implementer disposition
+
+Implementation `4b0e1c8b07072cdae742fef24240b2257a0e7631` limits self-closing
+syntax to SVG/MathML, makes HTML template/raw elements ignore the slash, and
+adds EOF-consuming plaintext/frameset handling. The three review witnesses plus
+plaintext/frameset Chromium differentials are regression-tested. A no-local
+clean clone passes 26/26 and live v0.1.1 verification with the published digest.
+Final independent re-review remains required before deployment.

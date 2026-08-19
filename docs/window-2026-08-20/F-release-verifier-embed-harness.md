@@ -185,6 +185,30 @@ The final follow-up commit changes this evidence section only, so `68385a9` is
 the exact implementation tree exercised by the final residual clean-clone
 probe.
 
+### HTML content-model correction
+
+Final parser implementation `4b0e1c8b07072cdae742fef24240b2257a0e7631`
+closes the remaining executed browser mismatches:
+
+- only foreign SVG/MathML start tags honor self-closing syntax;
+- HTML template and raw-text elements ignore `/` and consume through their
+  closing tag or EOF;
+- `plaintext` consumes all remaining source, including an apparent closing tag;
+- a `frameset` before the title consumes subsequent title candidates, while a
+  real head title before frameset remains valid.
+
+Regressions reject self-closing template/script/iframe title decoys, plaintext
+and apparent-closed plaintext, and title inside/after/self-closing frameset.
+Controls retain self-closing SVG followed by a real title and a real head title
+before frameset. A bounded Chromium differential across 30 HTML content models
+found only plaintext and frameset beyond the already reviewed raw/foreign cases;
+both are now pinned.
+
+A `git clone --no-local` of exact `4b0e1c8` was clean before and after. Every
+tool module parsed, the complete suite passed 26/26, and live v0.1.1 verification
+passed at 553538 bytes / 30 files / SHA-256
+`8f36eb8b492f6430acd2ccfc340806309e855ded782f6d5ef7d156e93a02bad1`.
+
 ## Deliberately not done
 
 - The verifier does not modify, publish, tag, upload, or delete anything.
