@@ -20,8 +20,9 @@ const UNIX_FILE_TYPE = 0o170000;
 const UNIX_REGULAR = 0o100000;
 const UNIX_DIRECTORY = 0o040000;
 const RAW_TEXT_ELEMENTS = new Set([
-  'iframe', 'math', 'noembed', 'noframes', 'noscript', 'script', 'style', 'svg', 'template', 'textarea', 'xmp',
+  'iframe', 'noembed', 'noframes', 'noscript', 'script', 'style', 'textarea', 'xmp',
 ]);
+const NESTED_IGNORED_ELEMENTS = new Set(['math', 'svg', 'template']);
 const CRC32_TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -397,6 +398,63 @@ function tagEnd(html, start) {
   return -1;
 }
 
+function rawTextEnd(html, lower, start, name) {
+  const marker = `</${name}`;
+  const closeStart = lower.indexOf(marker, start);
+  if (closeStart < 0) return html.length;
+  const closeEnd = tagEnd(html, closeStart + marker.length);
+  return closeEnd < 0 ? html.length : closeEnd;
+}
+
+function isSelfClosing(html, opening, end) {
+  return html.slice(opening, end - 1).trimEnd().endsWith('/');
+}
+
+function nestedIgnoredEnd(html, lower, start, rootName) {
+  let cursor = start;
+  let depth = 1;
+  while (cursor < html.length) {
+    const opening = html.indexOf('<', cursor);
+    if (opening < 0) return html.length;
+    if (html.startsWith('<!--', opening)) {
+      const commentEnd = html.indexOf('-->', opening + 4);
+      cursor = commentEnd < 0 ? html.length : commentEnd + 3;
+      continue;
+    }
+    if (html.startsWith('<!', opening) || html.startsWith('<?', opening)) {
+      const end = tagEnd(html, opening + 2);
+      cursor = end < 0 ? html.length : end;
+      continue;
+    }
+    const closing = /^<\/([A-Za-z][A-Za-z0-9:-]*)\b/.exec(html.slice(opening));
+    if (closing) {
+      const end = tagEnd(html, opening + closing[0].length);
+      if (end < 0) return html.length;
+      if (closing[1].toLowerCase() === rootName) {
+        depth -= 1;
+        if (depth === 0) return end;
+      }
+      cursor = end;
+      continue;
+    }
+    const startTag = /^<([A-Za-z][A-Za-z0-9:-]*)\b/.exec(html.slice(opening));
+    if (!startTag) {
+      cursor = opening + 1;
+      continue;
+    }
+    const name = startTag[1].toLowerCase();
+    const end = tagEnd(html, opening + startTag[0].length);
+    if (end < 0) return html.length;
+    if (name === rootName && !isSelfClosing(html, opening, end)) depth += 1;
+    if (RAW_TEXT_ELEMENTS.has(name) && !isSelfClosing(html, opening, end)) {
+      cursor = rawTextEnd(html, lower, end, name);
+      continue;
+    }
+    cursor = end;
+  }
+  return html.length;
+}
+
 function htmlTitleElements(html) {
   const lower = html.toLowerCase();
   const titles = [];
@@ -422,6 +480,12 @@ function htmlTitleElements(html) {
     const name = match[1].toLowerCase();
     const startEnd = tagEnd(html, opening + match[0].length);
     if (startEnd < 0) break;
+    if (NESTED_IGNORED_ELEMENTS.has(name)) {
+      cursor = isSelfClosing(html, opening, startEnd)
+        ? startEnd
+        : nestedIgnoredEnd(html, lower, startEnd, name);
+      continue;
+    }
     if (name === 'title') {
       const closePattern = /<\/title\s*>/gi;
       closePattern.lastIndex = startEnd;
@@ -432,14 +496,9 @@ function htmlTitleElements(html) {
       continue;
     }
     if (RAW_TEXT_ELEMENTS.has(name)) {
-      const marker = `</${name}`;
-      const closeStart = lower.indexOf(marker, startEnd);
-      if (closeStart < 0) {
-        cursor = html.length;
-        continue;
-      }
-      const closeEnd = tagEnd(html, closeStart + marker.length);
-      cursor = closeEnd < 0 ? html.length : closeEnd;
+      cursor = isSelfClosing(html, opening, startEnd)
+        ? startEnd
+        : rawTextEnd(html, lower, startEnd, name);
       continue;
     }
     cursor = startEnd;

@@ -9,6 +9,16 @@ Target: `de7fd7ce9717b01c37af852c712b265eb1c339fa`, rebased on deploy main
 bypass.** Clean-clone tools and the actual v0.1.1 artifact pass. The one blocker
 concerns malformed/adversarial verifier input, not the published archive.
 
+## Implementer disposition
+
+**FIXED after review.** SVG, MathML, and inert template subtrees are now skipped
+with same-tag nesting depth instead of a flat first-close search. Comments and
+raw-text elements inside those subtrees are skipped without interpreting
+tag-like bytes. The two exact nested reviewer cases reject, a nested template
+decoy rejects, and a nested foreign decoy followed by the one valid HTML title
+passes. Final clean-clone and live-release evidence is recorded in
+`F-release-verifier-embed-harness.md`.
+
 ## F-R2 residual
 
 The final fix treats `svg` and `math` as raw-text containers and skips to the

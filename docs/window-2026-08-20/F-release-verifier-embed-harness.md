@@ -100,6 +100,7 @@ GitHub API/asset fixture:
 | title bytes only inside an HTML comment | rejected: no title element |
 | title bytes only inside a script string | rejected: no title element |
 | title element only inside SVG or MathML | rejected: foreign element is not the HTML document title |
+| nested SVG/MathML/template closes before a foreign title | rejected: nested ignored-container depth remains active through the outer close |
 | in-root symlink targets a file outside game root | HTTP 403; bytes not served |
 
 Two CONFIRMED gaps were fixed during this pass: the first implementation read
@@ -134,7 +135,7 @@ The independent review is preserved verbatim at
 | Finding | Disposition |
 | --- | --- |
 | F-R1 special ZIP entries / Git symlink mode | FIXED: creator system and external mode parsed; only regular files/directories accepted; Git release blobs restricted to `100644`/`100755`; unit and full Release fixtures reject symlink/FIFO |
-| F-R2 HTML-title decoys, including final SVG residual | FIXED: token scan skips comments, raw-text containers, SVG and MathML before accepting exactly one HTML title element; comment/script/attribute/foreign-only decoys reject, while a foreign decoy beside the real HTML title passes |
+| F-R2 HTML-title decoys, including nested foreign residual | FIXED: token scan skips comments/raw text plus nesting-aware SVG, MathML, and template subtrees before accepting exactly one HTML title element; flat/nested/attribute decoys reject, while a foreign decoy beside the real HTML title passes |
 | F-R3 symlink escape from embed root | FIXED: root and final targets are checked by `realpath`; outside symlink fixture returns 403 without the secret bytes |
 
 Final live Release probe after rebasing onto `onigokko-play` main `59c949f`:
