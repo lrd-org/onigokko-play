@@ -148,6 +148,21 @@ entries, SHA-256
 The matching sidecar, GitHub asset metadata, v0.1.1 provenance, tag-tree paths
 and modes, every file CRC, notices, and real HTML title element all passed.
 
+### Review-fix clean-clone proof
+
+Code/disposition commit `eab10a721bb38d43f02d2944b365f3adb2c4dab1`
+was cloned with `git clone --no-local` to a new temporary directory. The clone
+was clean before and after verification. From that clone:
+
+- all four tool/test `node --check` probes passed;
+- `node --test tools/tests/*.test.mjs` passed 26/26;
+- `node tools/verify-release.mjs v0.1.1 --json` passed with the values above;
+- `git diff --check` passed.
+
+The follow-up commit changes this evidence section only, so `eab10a7` is the
+exact implementation and disposition tree exercised by the final clean-clone
+probe.
+
 ## Deliberately not done
 
 - The verifier does not modify, publish, tag, upload, or delete anything.
