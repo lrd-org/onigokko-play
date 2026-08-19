@@ -44,7 +44,9 @@ then open <http://localhost:8000/>.
 
 The release zip is what is published on itch.io: the same files, with
 `index.html` at the root of the archive. Published 2026-08-19 as v0.1 at
-https://lrd-game.itch.io/onigokko.
+https://lrd-game.itch.io/onigokko. v0.1.1, prepared from source commit
+`b0313a7c5062ecdb1625e0f221e3b0ea0b1cba38`, makes the title, pause, and result
+cards fit phone-landscape screens without changing gameplay.
 
 ## Licence
 

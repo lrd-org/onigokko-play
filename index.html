@@ -268,6 +268,83 @@
     .stat b { font-size: 16px; }
     .toggle { width: 48px; height: 48px; }
   }
+  /* ---- landscape phones: the cards FIT, they do not scroll (ledger row 5) ----
+     Found while packaging the release for itch.io. At 844x390 the title card
+     is 470 px tall against 390 px of screen, so its bottom - the settings row,
+     and the data-deletion bin with it - sits below the fold; the result card
+     is 451. Nothing was CLIPPED (the fits-or-scrolls rule on .screen did its
+     job: the host scrolled 128 px and the bin was reachable), but a control
+     you have to discover by dragging a card is a control most players never
+     find, and the bin is the one a player may actually need. This is why the
+     store listing could not claim "mobile friendly".
+     One column cannot be shrunk far enough: at the shortest case in scope - an
+     iPhone SE held sideways, 375 px minus Safari's chrome - even a hard shrink
+     of every element lands over budget. So here the card becomes TWO columns:
+     the one big round button (play / resume / again) takes the right column
+     and the full height, everything else stacks down the left. Grid rather
+     than flex, because the markup is flat and stays flat - main.js moves the
+     single #toggles row between the title and pause cards, and #boot-retry
+     stands in for #play in the same cell, so neither can be wrapped.
+     Landscape and under 430 px of height only: portrait phones, the 960x600
+     itch frame and every desktop window are all taller and keep the
+     one-column card exactly as it was. Behaviour is untouched; this block
+     sets no display/visibility on anything the game toggles. */
+  @media (max-height: 430px) and (orientation: landscape) {
+    /* A declared safe-area inset still wins; only the fallback comes down,
+       and on this axis 24 px top and bottom is 48 px of a scarce 375. */
+    .screen {
+      gap: 12px;
+      padding: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px))
+               max(14px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+    }
+    #title-card, #pause-card, #result > .card {
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center; justify-items: center;
+      gap: 10px 22px;
+      padding: 14px 20px; border-radius: 20px;
+      /* Two columns need width the portrait cap forbids. The 100% is the
+         screen's content box, so the card can still never grow into the
+         safe-area padding. */
+      max-width: min(100%, 620px);
+    }
+    /* Everything stacks in column one... */
+    #title-card > *, #pause-card > *, #result > .card > * { grid-column: 1; }
+    /* ...except the round button, which takes column two for the whole height
+       of the card. The explicit row counts are what make `1 / -1` a real span:
+       with no explicit rows, line -1 IS line 1 and the span silently collapses
+       to one row. A row left empty by a hidden optional (no trophy yet, no
+       seed) costs its 10 px gap and nothing else. */
+    #title-card { grid-template-rows: repeat(4, auto); }
+    #pause-card { grid-template-rows: repeat(2, auto); }
+    #result > .card { grid-template-rows: repeat(5, auto); }
+    /* Child combinators, and the button named through its own card: a plain
+       `#again` loses to `#result > .card > *` on specificity and the button
+       lands back in column one, on top of the stack. */
+    #title-card > .play-btn, #pause-card > .play-btn, #result > .card > #again {
+      grid-column: 2; grid-row: 1 / -1;
+    }
+
+    .play-btn { width: 92px; height: 92px; }
+    .play-btn svg { width: 36px; height: 36px; }
+    /* The three creatures: the same drawing, 0.8 scale. */
+    #title-card > svg { width: 168px; height: 72px; }
+    .glyphs { gap: 14px; }
+    .keys { grid-template-columns: repeat(3, 20px); grid-auto-rows: 20px; }
+    .key { font-size: 10px; }
+    .key.wide { font-size: 9px; }
+    .glyph svg { width: 26px; height: 26px; }
+    /* 48 px is the floor the narrow-portrait block already sets, and the row
+       keeps its 14 px gaps: nothing here gets harder to hit than it is on a
+       small phone held upright. */
+    .toggle { width: 48px; height: 48px; }
+    .toggle svg { width: 24px; height: 24px; }
+    /* The end-of-round glyph is an <svg> inside a text box, so `font-size` is
+       only the leading around it - 20 px of nothing on this axis. */
+    #result-icon { font-size: 0; line-height: 0; }
+    #result-icon svg { width: 56px; height: 56px; display: block; }
+    .stats { gap: 10px; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .play-btn, .toggle, .corner-btn { transition: none; }
     .best.record .spark { animation: none; }
