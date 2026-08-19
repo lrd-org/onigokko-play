@@ -29,6 +29,8 @@ Nothing is sent anywhere — the game makes no network requests of any kind once
 the page has loaded. The bin icon on the title card deletes everything the game
 has stored; hold it to confirm.
 
+Onigokko itself sends no play or settings data: up to four `onigokko.ofa2.*` records remain in this browser, run-history withdrawal removes the runs record, and the in-game wipe or browser site-data clearing removes all four.
+
 ## Running it locally
 
 There is no build step. Serve the folder with any static file server and open
