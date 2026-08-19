@@ -1,4 +1,4 @@
-# itch.io page copy — Onigokko v0.1
+# itch.io page copy — Onigokko v0.1.1
 
 Draft for pasting. The slug/URL is yours to pick; nothing below assumes one.
 
@@ -47,6 +47,8 @@ Drag anywhere on the left of the screen to steer; how far you pull from
 where your thumb landed is how hard you turn. The right side of the screen
 is a boost pad. No on-screen d-pad, and the middle of the screen stays
 clear.
+
+v0.1.1 makes the title, pause, and result cards fit phone-landscape screens.
 ```
 
 ## Japanese one-liner
@@ -58,8 +60,10 @@ clear.
 ## Privacy line (paste near the bottom of the description)
 
 ```
-Your best score and settings are saved only in your browser. Nothing is
-sent anywhere. The bin on the title screen deletes them.
+Your best score, settings, and optional run history stay only in your
+browser. Nothing is sent anywhere. The bar-chart button controls run
+history; turning it off deletes that history. Hold the bin on the title
+screen to delete everything the game has saved.
 ```
 
 ---
@@ -75,7 +79,7 @@ yours to change.
 | Embed | **Embed in page** | It is a short session in a fixed frame; it does not need its own tab. |
 | Viewport | **960 × 600** | Tested. The title card is 432 px tall at 960 wide, so the frame needs about 480 px of height at minimum; 600 leaves comfortable headroom. |
 | Fullscreen button | **ON** | The game fills whatever box it is given, and it reads much better big. |
-| Mobile friendly | **OFF** for v0.1 | Phone **portrait** (390 × 844) is clean. Phone **landscape** (844 × 390) is not: the title card is 432 px tall and the bottom row of buttons is cut off by the viewport. Until that is fixed, leaving this off avoids handing phone players a screen they cannot finish reading. |
+| Mobile friendly | **ON** for v0.1.1 | Browser-verified at 390 × 844 portrait and 844 × 390 / 568 × 320 landscape. In landscape the title, pause, and result cards use two columns and fit without horizontal scrolling. The first real-phone Safari check is still owed. |
 | Automatically start on page load | **OFF** | Audio needs a gesture to unlock in every browser, so an auto-start round would begin silent. |
 | SharedArrayBuffer support | **OFF** | Not used. Turning it on adds cross-origin isolation headers the game does not need. |
 | Pricing | **Free**, donations **off** | No commerce on this release. |
@@ -96,6 +100,8 @@ is left out.)
 
 ### Upload note
 
-Upload `onigokko-v0.1.zip` as the project file and tick "This file will be
-played in the browser". `index.html` is at the root of the archive, which is
-what itch requires.
+Upload `onigokko-v0.1.1.zip` as the project file and tick "This file will be
+played in the browser". Turn **Mobile friendly ON**. `index.html` is at the
+root of the archive. Verify the file against
+`onigokko-v0.1.1.zip.sha256` before uploading; expected SHA-256:
+`8f36eb8b492f6430acd2ccfc340806309e855ded782f6d5ef7d156e93a02bad1`.
