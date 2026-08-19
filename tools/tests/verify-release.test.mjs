@@ -336,6 +336,9 @@ test('requires the exact Onigokko HTML title', () => {
     '<frameset><title>Onigokko</title></frameset>',
     '<frameset></frameset><title>Onigokko</title>',
     '<frameset/><title>Onigokko</title>',
+    '<template><plaintext></template><title>Onigokko</title>',
+    '<template><plaintext></plaintext></template><title>Onigokko</title>',
+    '<script><!--<script></script><title>Onigokko</title></script>',
   ]) {
     assert.throws(
       () => internals.verifyHtmlTitle(Buffer.from(html)),

@@ -400,16 +400,43 @@ function tagEnd(html, start) {
   return -1;
 }
 
+function delimitedMarker(lower, marker, start) {
+  let markerStart = lower.indexOf(marker, start);
+  while (markerStart >= 0) {
+    const delimiter = lower[markerStart + marker.length];
+    if (delimiter === undefined || /[\t\n\f\r />]/.test(delimiter)) return markerStart;
+    markerStart = lower.indexOf(marker, markerStart + marker.length);
+  }
+  return -1;
+}
+
 function rawTextEnd(html, lower, start, name) {
   const marker = `</${name}`;
-  let closeStart = lower.indexOf(marker, start);
-  while (closeStart >= 0) {
-    const delimiter = lower[closeStart + marker.length];
-    if (delimiter === undefined || /[\t\n\f\r />]/.test(delimiter)) {
-      const closeEnd = tagEnd(html, closeStart + marker.length);
-      return closeEnd < 0 ? html.length : closeEnd;
+  const closeStart = delimitedMarker(lower, marker, start);
+  if (closeStart < 0) return html.length;
+  const closeEnd = tagEnd(html, closeStart + marker.length);
+  return closeEnd < 0 ? html.length : closeEnd;
+}
+
+function scriptTextEnd(html, lower, start) {
+  let cursor = start;
+  let depth = 1;
+  while (cursor < html.length) {
+    const opening = delimitedMarker(lower, '<script', cursor);
+    const closing = delimitedMarker(lower, '</script', cursor);
+    if (closing < 0) return html.length;
+    if (opening >= 0 && opening < closing) {
+      const openingEnd = tagEnd(html, opening + '<script'.length);
+      if (openingEnd < 0) return html.length;
+      depth += 1;
+      cursor = openingEnd;
+      continue;
     }
-    closeStart = lower.indexOf(marker, closeStart + marker.length);
+    const closingEnd = tagEnd(html, closing + '</script'.length);
+    if (closingEnd < 0) return html.length;
+    depth -= 1;
+    if (depth === 0) return closingEnd;
+    cursor = closingEnd;
   }
   return html.length;
 }
@@ -453,11 +480,14 @@ function nestedIgnoredEnd(html, lower, start, rootName) {
     const name = startTag[1].toLowerCase();
     const end = tagEnd(html, opening + startTag[0].length);
     if (end < 0) return html.length;
+    if (EOF_IGNORED_ELEMENTS.has(name)) return html.length;
     const foreignSelfClosed = FOREIGN_SELF_CLOSING_ELEMENTS.has(name)
       && isSelfClosing(html, opening, end);
     if (name === rootName && !foreignSelfClosed) depth += 1;
     if (RAW_TEXT_ELEMENTS.has(name)) {
-      cursor = rawTextEnd(html, lower, end, name);
+      cursor = name === 'script'
+        ? scriptTextEnd(html, lower, end)
+        : rawTextEnd(html, lower, end, name);
       continue;
     }
     cursor = end;
@@ -510,7 +540,9 @@ function htmlTitleElements(html) {
       continue;
     }
     if (RAW_TEXT_ELEMENTS.has(name)) {
-      cursor = rawTextEnd(html, lower, startEnd, name);
+      cursor = name === 'script'
+        ? scriptTextEnd(html, lower, startEnd)
+        : rawTextEnd(html, lower, startEnd, name);
       continue;
     }
     cursor = startEnd;
