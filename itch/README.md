@@ -15,7 +15,7 @@ transform.
 | `screenshots/play-1280x720.png` | desktop play | 204,893 | `7887272e05c8e3105a887062544448f5880759162268536919878348a41e83eb` |
 | `screenshots/result-1280x720.png` | desktop result | 442,660 | `8ca50395151f842d04922bef78acd878f764bc119ee05b9b6c15c3cd12d3d214` |
 | `screenshots/portrait-390x844.png` | phone portrait play | 76,664 | `f95306435793190dcfb6106b1514ade79a5d98f75b6bf6aa9633b36e1dc2fe86` |
-| `screenshots/landscape-844x390.png` | phone landscape title | 177,026 | `18e129d7dab8d52cca00a73ff8e7698294fd3d8188a5469600a3590bdd4dcd29` |
+| `screenshots/landscape-844x390.png` | phone landscape title, touch controls | 176,626 | `44e2d12c7d528ab6567c6a4ddb6339934800dfa6bf656d501d8eaa7057b99b8d` |
 | `screenshots/landscape-result-844x390.png` | phone landscape result | 181,510 | `07087628c42a221cfdb404775f56904d44ac0cfca95dae5bcad6670e7338ed2d` |
 | `onigokko-v0.1.1-gameplay.gif` | 9.2-second play loop, 480x270, 5 fps, 256 colors | 2,322,490 | `1973038ad67a4d6d70dc2a10e9e0ea6991c139db9190604e41bae3a75da83e67` |
 
