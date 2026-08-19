@@ -216,6 +216,14 @@ container. Chromium confirmed each following title was inert before the fix.
 Another no-local clone of exact `300225b` passed all 26 tests, syntax/diff/clean
 checks, and the same live v0.1.1 digest/file-count verification.
 
+The final tokenizer-state implementation
+`dc2b97d6d3a91190e426fd5dbb2297dc83624ef7` also makes EOF-consuming
+plaintext dominate inside ignored template/foreign subtrees and conservatively
+tracks nested script markers before accepting a closing script tag. It rejects
+the review's nested-plaintext and script double-escaped witnesses. A no-local
+clone of exact `dc2b97d` again passed 26/26, all static/clean checks, and live
+v0.1.1 verification at the same published bytes, file count, and digest.
+
 ## Deliberately not done
 
 - The verifier does not modify, publish, tag, upload, or delete anything.
