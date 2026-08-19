@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onigokko embed harness</title>
+<style>
+  :root {
+    color-scheme: light;
+    font-family: system-ui, sans-serif;
+    background: #f4f6f8;
+    color: #18212b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-width: min-content; }
+  header {
+    position: sticky; top: 0; z-index: 2;
+    min-height: 52px; display: flex; align-items: center; gap: 12px;
+    padding: 8px 16px; background: #fff; border-bottom: 1px solid #ccd3da;
+  }
+  header strong { flex: 1; font-size: 15px; }
+  button {
+    min-width: 44px; min-height: 44px; border: 1px solid #8995a1;
+    border-radius: 6px; background: #fff; color: #18212b; cursor: pointer;
+    font: inherit;
+  }
+  button:focus-visible { outline: 3px solid #1971c2; outline-offset: 2px; }
+  #fullscreen { padding: 0 14px; }
+  main { width: max-content; margin: 16px auto; }
+  #stage {
+    position: relative; width: __FRAME_WIDTH__px; height: __FRAME_HEIGHT__px;
+    background: #1e2731; box-shadow: 0 2px 10px rgb(24 33 43 / 24%);
+  }
+  iframe { display: block; width: 100%; height: 100%; border: 0; background: #bcd9ee; }
+  #run {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; border-radius: 0; background: rgb(20 28 36 / 78%); color: #fff;
+    font-size: 20px; font-weight: 700;
+  }
+  #run[hidden] { display: none; }
+  #status { margin: 10px 0 0; color: #4a5661; font-size: 13px; }
+  #stage:fullscreen { width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Itch-like cross-origin parent</strong>
+  <button id="fullscreen" type="button">Fullscreen</button>
+</header>
+<main>
+  <div id="stage">
+    <iframe id="game" title="Onigokko" src="about:blank"
+      allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <button id="run" type="button">Click to run</button>
+  </div>
+  <p id="status" aria-live="polite">Game paused behind activation overlay</p>
+</main>
+<script>
+  const defaultGameUrl = __GAME_URL_JSON__;
+  const frame = document.querySelector('#game');
+  const run = document.querySelector('#run');
+  const stage = document.querySelector('#stage');
+  const status = document.querySelector('#status');
+  frame.src = defaultGameUrl;
+
+  run.addEventListener('click', () => {
+    run.hidden = true;
+    frame.focus();
+    status.textContent = 'Game activated';
+  });
+
+  document.querySelector('#fullscreen').addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await stage.requestFullscreen();
+    } catch (error) {
+      status.textContent = `Fullscreen failed: ${error.name}`;
+    }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    status.textContent = document.fullscreenElement ? 'Fullscreen active' : 'Fullscreen closed';
+  });
+</script>
+</body>
+</html>

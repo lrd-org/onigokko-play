@@ -50,6 +50,53 @@ https://lrd-game.itch.io/onigokko. v0.1.1, prepared from source commit
 `b0313a7c5062ecdb1625e0f221e3b0ea0b1cba38`, makes the title, pause, and result
 cards fit phone-landscape screens without changing gameplay.
 
+### Verify a GitHub Release
+
+From a clean clone, use Node.js 20 or later with network access to GitHub:
+
+```sh
+node tools/verify-release.mjs v0.1
+```
+
+The verifier downloads the tag's zip and `.sha256` assets from the GitHub
+Release. It checks the Release tag and title, GitHub's asset digest and size,
+the checksum asset, the matching `PROVENANCE.md` record, and the archive's exact
+file manifest against the tagged repository tree. It also requires
+`index.html` and `THIRD_PARTY_NOTICES.txt` at the archive root and the exact
+HTML title `Onigokko`. Set `GITHUB_TOKEN` only when API rate limits or a private
+repository require authentication; the game itself performs no network calls.
+
+Run the dependency-free tool tests with:
+
+```sh
+node --test tools/tests/*.test.mjs
+```
+
+### Reproduce the embed environment
+
+The embed harness serves the build and an itch-like parent page from different
+origins. It puts a click-to-run activation layer over a 960 x 600 iframe and
+provides a fullscreen control:
+
+```sh
+node tools/embed-harness/serve.mjs
+```
+
+Open <http://127.0.0.1:4174/>. The game is served from
+<http://127.0.0.1:4173/>. Test another extracted release directory or viewport
+without modifying it:
+
+```sh
+node tools/embed-harness/serve.mjs \
+  --game-dir /path/to/extracted-release --width 390 --height 844
+```
+
+Use `--game-port` and `--parent-port` when those ports are occupied. The two
+ports must differ. The harness accepts loopback bind hosts only and cannot be
+redirected to a remote game through the parent URL. It has no dependencies,
+does not modify the build, and does not introduce any network code into the
+game.
+
 ## Licence
 
 Third-party components and their licences are listed in
