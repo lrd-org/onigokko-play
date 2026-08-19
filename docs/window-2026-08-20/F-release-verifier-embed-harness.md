@@ -164,6 +164,26 @@ The follow-up commit changes this evidence section only, so `eab10a7` is the
 exact implementation and disposition tree exercised by the final clean-clone
 probe.
 
+### Foreign-title residual clean-clone proof
+
+Final implementation/disposition commit
+`68385a9a2d3cb31343855e32c0a62eb833186c44` was cloned with
+`git clone --no-local` to another new temporary directory. The clone was clean
+before and after verification. From that clone:
+
+- all four tool/test `node --check` probes passed;
+- `node --test tools/tests/*.test.mjs` passed 26/26, including SVG-only,
+  MathML-only, attribute, comment, and script title decoys plus a foreign decoy
+  beside the valid HTML title;
+- `node tools/verify-release.mjs v0.1.1 --json` passed at 553538 bytes, 30
+  files, and SHA-256
+  `8f36eb8b492f6430acd2ccfc340806309e855ded782f6d5ef7d156e93a02bad1`;
+- `git diff --check` passed.
+
+The final follow-up commit changes this evidence section only, so `68385a9` is
+the exact implementation tree exercised by the final residual clean-clone
+probe.
+
 ## Deliberately not done
 
 - The verifier does not modify, publish, tag, upload, or delete anything.
