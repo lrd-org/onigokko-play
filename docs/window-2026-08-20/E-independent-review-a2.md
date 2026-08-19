@@ -4,6 +4,21 @@ Reviewed exact head: `45779de8f3fe069436be82c1f4d65b446abdd585`
 
 Verdict: **BLOCKED - one CONFIRMED media mismatch remains.**
 
+## Implementer disposition
+
+**FIXED at `4293dcc`.** The single landscape-title PNG was regenerated from the
+exact v0.1.1 archive in a Chromium context with 844 x 390 viewport,
+`isMobile: true`, `hasTouch: true`, and DPR 1. Runtime evidence before capture:
+`body.touch=true`, `.key-only=none`, `.touch-only=flex`, title card 402 x 204,
+zero console/page errors. The replacement visibly carries the drag, boost, and
+auto-throttle touch glyphs in the two-column layout.
+
+Replacement: 176,626 bytes, SHA-256
+`44e2d12c7d528ab6567c6a4ddb6339934800dfa6bf656d501d8eaa7057b99b8d`;
+`itch/README.md` was updated to the same values. Every other reviewed file is
+unchanged. Final reviewer recheck is recorded at the branch head before direct
+deployment.
+
 ## Finding
 
 ### E-R1 - The phone-landscape title screenshot is not a touch-device capture
