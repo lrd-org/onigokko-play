@@ -310,6 +310,25 @@ test('requires the exact Onigokko HTML title', () => {
     )),
     /exactly one/,
   );
+  for (const tag of ['template', 'script', 'iframe']) {
+    assert.throws(
+      () => internals.verifyHtmlTitle(Buffer.from(`<${tag}/><title>Onigokko</title>`)),
+      /exactly one/,
+      `HTML treated <${tag}/> as self-closing`,
+    );
+  }
+  for (const html of [
+    '<plaintext><title>Onigokko</title>',
+    '<plaintext></plaintext><title>Onigokko</title>',
+    '<frameset><title>Onigokko</title></frameset>',
+    '<frameset></frameset><title>Onigokko</title>',
+    '<frameset/><title>Onigokko</title>',
+  ]) {
+    assert.throws(
+      () => internals.verifyHtmlTitle(Buffer.from(html)),
+      /exactly one/,
+    );
+  }
   assert.throws(
     () => internals.verifyHtmlTitle(Buffer.from('<main data-decoy="<title>Onigokko</title>"></main>')),
     /exactly one/,
@@ -322,6 +341,12 @@ test('requires the exact Onigokko HTML title', () => {
   )));
   assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
     '<svg><svg></svg><title>Wrong namespace</title></svg><title>Onigokko</title>',
+  )));
+  assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
+    '<svg/><title>Onigokko</title>',
+  )));
+  assert.doesNotThrow(() => internals.verifyHtmlTitle(Buffer.from(
+    '<head><title>Onigokko</title></head><frameset></frameset>',
   )));
 });
 

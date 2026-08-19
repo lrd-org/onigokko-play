@@ -23,6 +23,8 @@ const RAW_TEXT_ELEMENTS = new Set([
   'iframe', 'noembed', 'noframes', 'noscript', 'script', 'style', 'textarea', 'xmp',
 ]);
 const NESTED_IGNORED_ELEMENTS = new Set(['math', 'svg', 'template']);
+const FOREIGN_SELF_CLOSING_ELEMENTS = new Set(['math', 'svg']);
+const EOF_IGNORED_ELEMENTS = new Set(['frameset', 'plaintext']);
 const CRC32_TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -445,8 +447,10 @@ function nestedIgnoredEnd(html, lower, start, rootName) {
     const name = startTag[1].toLowerCase();
     const end = tagEnd(html, opening + startTag[0].length);
     if (end < 0) return html.length;
-    if (name === rootName && !isSelfClosing(html, opening, end)) depth += 1;
-    if (RAW_TEXT_ELEMENTS.has(name) && !isSelfClosing(html, opening, end)) {
+    const foreignSelfClosed = FOREIGN_SELF_CLOSING_ELEMENTS.has(name)
+      && isSelfClosing(html, opening, end);
+    if (name === rootName && !foreignSelfClosed) depth += 1;
+    if (RAW_TEXT_ELEMENTS.has(name)) {
       cursor = rawTextEnd(html, lower, end, name);
       continue;
     }
@@ -480,8 +484,12 @@ function htmlTitleElements(html) {
     const name = match[1].toLowerCase();
     const startEnd = tagEnd(html, opening + match[0].length);
     if (startEnd < 0) break;
+    if (EOF_IGNORED_ELEMENTS.has(name)) {
+      cursor = html.length;
+      continue;
+    }
     if (NESTED_IGNORED_ELEMENTS.has(name)) {
-      cursor = isSelfClosing(html, opening, startEnd)
+      cursor = FOREIGN_SELF_CLOSING_ELEMENTS.has(name) && isSelfClosing(html, opening, startEnd)
         ? startEnd
         : nestedIgnoredEnd(html, lower, startEnd, name);
       continue;
@@ -496,9 +504,7 @@ function htmlTitleElements(html) {
       continue;
     }
     if (RAW_TEXT_ELEMENTS.has(name)) {
-      cursor = isSelfClosing(html, opening, startEnd)
-        ? startEnd
-        : rawTextEnd(html, lower, startEnd, name);
+      cursor = rawTextEnd(html, lower, startEnd, name);
       continue;
     }
     cursor = startEnd;
