@@ -209,6 +209,13 @@ tool module parsed, the complete suite passed 26/26, and live v0.1.1 verificatio
 passed at 553538 bytes / 30 files / SHA-256
 `8f36eb8b492f6430acd2ccfc340806309e855ded782f6d5ef7d156e93a02bad1`.
 
+Final implementation `300225b30c2e33aff1a7fdda8d4867fbbf32234a`
+also requires an exact raw-text closing-tag name: near matches such as
+`</scriptx>`, `</iframex>`, and `</textareax>` no longer terminate the ignored
+container. Chromium confirmed each following title was inert before the fix.
+Another no-local clone of exact `300225b` passed all 26 tests, syntax/diff/clean
+checks, and the same live v0.1.1 digest/file-count verification.
+
 ## Deliberately not done
 
 - The verifier does not modify, publish, tag, upload, or delete anything.
